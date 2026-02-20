@@ -253,7 +253,6 @@
             
             let valid = true;
             
-            // Валидация
             if (fio.length < 5) {
                 document.getElementById('fioGroup').classList.add('error');
                 valid = false;
@@ -284,37 +283,19 @@
             
             if (!valid) return;
             
-            // Отправка данных
             const btn = document.getElementById('submitBtn');
             btn.disabled = true;
             btn.textContent = 'Отправка...';
             
-            try {
-                const response = await fetch('https://your-bot-webhook-url.ru/webapp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        fio: fio,
-                        dob: dob,
-                        phone: '+7' + phone,
-                        amount: amount,
-                        username: tg.initDataUnsafe.user?.username || 'unknown',
-                        source: 'mini_app'
-                    })
-                });
-                
-                if (response.ok) {
-                    document.getElementById('creditForm').style.display = 'none';
-                    document.getElementById('successMessage').style.display = 'block';
-                    tg.HapticFeedback.notificationOccurred('success');
-                } else {
-                    throw new Error('Ошибка отправки');
-                }
-            } catch (error) {
-                alert('Ошибка отправки заявки. Попробуйте позже.');
-                btn.disabled = false;
-                btn.textContent = 'Отправить заявку';
-            }
+            // Отправка данных через Telegram Bot API
+            tg.sendData(JSON.stringify({
+                fio: fio,
+                dob: dob,
+                phone: '+7' + phone,
+                amount: amount,
+                username: tg.initDataUnsafe.user?.username || 'unknown',
+                source: 'mini_app'
+            }));
         });
     </script>
 </body>
