@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ЗумАвто - Заявка на кредит</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { background: #F5F5F5; padding: 20px; color: #000; }
@@ -17,6 +16,46 @@
         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; }
         .form-group input { width: 100%; padding: 14px 16px; border: 2px solid #E0E0E0; border-radius: 12px; font-size: 16px; background: #fff; }
         .form-group input:focus { outline: none; border-color: #E30613; }
+        
+        /* Стили для чекбокса согласия */
+        .consent-group {
+            background: #fff;
+            padding: 16px;
+            border-radius: 12px;
+            border: 2px solid #E0E0E0;
+            margin-bottom: 20px;
+        }
+        .consent-group label {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            cursor: pointer;
+        }
+        .consent-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            accent-color: #E30613;
+        }
+        .consent-group a {
+            color: #E30613;
+            text-decoration: underline;
+        }
+        .consent-group.error {
+            border-color: #E30613;
+        }
+        .consent-error {
+            color: #E30613;
+            font-size: 12px;
+            margin-top: 8px;
+            display: none;
+        }
+        .consent-group.error .consent-error {
+            display: block;
+        }
+        
         .btn-submit { width: 100%; padding: 16px; background: #E30613; color: #fff; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-submit:disabled { background: #ccc; }
         .success { text-align: center; padding: 40px 20px; display: none; }
@@ -56,6 +95,18 @@
                 <input type="tel" id="amount" placeholder="500000">
                 <div class="error">Введите сумму</div>
             </div>
+            
+            <!-- СОГЛАСИЕ НА ОБРАБОТКУ ПЕРСОНАЛЬНЫХ ДАННЫХ -->
+            <div class="consent-group" id="consentGroup">
+                <label>
+                    <input type="checkbox" id="consent">
+                    <span>
+                        Я даю согласие на обработку <a href="#policy" onclick="showPolicy(); return false;">персональных данных</a> в соответствии с политикой конфиденциальности
+                    </span>
+                </label>
+                <div class="consent-error">Необходимо согласие на обработку персональных данных</div>
+            </div>
+            
             <button type="submit" class="btn-submit" id="submitBtn">Отправить заявку</button>
         </form>
 
@@ -66,11 +117,24 @@
         </div>
     </div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+    <!-- МОДАЛЬНОЕ ОКНО ПОЛИТИКИ -->
+    <div id="policyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;" onclick="hidePolicy()">
+        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; padding:24px; border-radius:16px; max-width:90%; max-height:80%; overflow-y:auto;" onclick="event.stopPropagation()">
+            <h2 style="color:#E30613; margin-bottom:16px; font-size:20px;">📄 Политика конфиденциальности</h2>
+            <div style="font-size:14px; line-height:1.6; color:#333;">
+                <p style="margin-bottom:12px;"><b>1. Оператор персональных данных:</b><br>ООО «ЗумАвто»</p>
+                <p style="margin-bottom:12px;"><b>2. Какие данные мы собираем:</b><br>• ФИО<br>• Дата рождения<br>• Номер телефона<br>• Желаемая сумма кредита</p>
+                <p style="margin-bottom:12px;"><b>3. Цель обработки:</b><br>Обработка заявки на автокредит, связь с клиентом</p>
+                <p style="margin-bottom:12px;"><b>4. Передача данных:</b><br>Данные передаются банкам-партнёрам для рассмотрения заявки на кредит</p>
+                <p style="margin-bottom:12px;"><b>5. Хранение данных:</b><br>Данные хранятся до момента обработки заявки или до отзыва согласия</p>
+                <p style="margin-bottom:12px;"><b>6. Ваши права:</b><br>Вы можете отозвать согласие на обработку персональных данных в любой момент</p>
+                <p style="margin-bottom:12px;"><b>7. Контакты:</b><br>г. Уфа, пр. Октября 31/3<br>Тел: +7-927-087-07-50</p>
+            </div>
+            <button onclick="hidePolicy()" style="margin-top:16px; padding:12px 24px; background:#E30613; color:#fff; border:none; border-radius:8px; font-size:16px; cursor:pointer;">Закрыть</button>
+        </div>
+    </div>
 
+    <script>
         // Маска для телефона
         document.getElementById('phone').addEventListener('input', function() {
             let v = this.value.replace(/\D/g, '').slice(0, 11);
@@ -98,52 +162,96 @@
             this.value = this.value.replace(/\D/g, '');
         });
 
+        // Показать политику
+        function showPolicy() {
+            document.getElementById('policyModal').style.display = 'block';
+        }
+
+        // Скрыть политику
+        function hidePolicy() {
+            document.getElementById('policyModal').style.display = 'none';
+        }
+
         // Отправка формы
-        document.getElementById('creditForm').addEventListener('submit', function(e) {
+        document.getElementById('creditForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const fio = document.getElementById('fio').value.trim();
             const dob = document.getElementById('dob').value.trim();
             const phone = document.getElementById('phone').value.replace(/\D/g, '');
             const amount = document.getElementById('amount').value.trim();
+            const consent = document.getElementById('consent').checked;
             
-            // Валидация
-            if (fio.length < 5) { document.getElementById('fioGroup').classList.add('error'); return; }
-            if (dob.length !== 10) { document.getElementById('dobGroup').classList.add('error'); return; }
-            if (phone.length !== 11) { document.getElementById('phoneGroup').classList.add('error'); return; }
-            if (amount.length < 5) { document.getElementById('amountGroup').classList.add('error'); return; }
+            let valid = true;
+            
+            // Валидация полей
+            if (fio.length < 5) { document.getElementById('fioGroup').classList.add('error'); valid = false; } 
+            else { document.getElementById('fioGroup').classList.remove('error'); }
+            
+            if (dob.length !== 10) { document.getElementById('dobGroup').classList.add('error'); valid = false; } 
+            else { document.getElementById('dobGroup').classList.remove('error'); }
+            
+            if (phone.length !== 11) { document.getElementById('phoneGroup').classList.add('error'); valid = false; } 
+            else { document.getElementById('phoneGroup').classList.remove('error'); }
+            
+            if (amount.length < 5) { document.getElementById('amountGroup').classList.add('error'); valid = false; } 
+            else { document.getElementById('amountGroup').classList.remove('error'); }
+            
+            // Валидация согласия
+            if (!consent) { 
+                document.getElementById('consentGroup').classList.add('error'); 
+                valid = false; 
+            } else { 
+                document.getElementById('consentGroup').classList.remove('error'); 
+            }
+            
+            if (!valid) return;
             
             const btn = document.getElementById('submitBtn');
             btn.disabled = true;
             btn.textContent = 'Отправка...';
             
+            // Данные для отправки
             const data = {
                 fio: fio,
                 dob: dob,
                 phone: '+7' + phone,
                 amount: amount,
-                username: tg.initDataUnsafe.user?.username || 'unknown',
-                source: 'mini_app'
+                source: 'website',
+                consent: true
             };
             
-            // ОТЛАДКА - показываем данные
-            alert('📦 Отправляем данные:\n' + JSON.stringify(data, null, 2));
+            // ОТПРАВКА В TELEGRAM
+            const BOT_TOKEN = '8325452462:AAEsOtOv19bUadFH1VxYywqGjFUKtyUHHUc';
+            const CHAT_ID = '846314601';
             
-            // Отправка в Telegram
+            const message = `🌐 <b>Заявка с сайта</b>\n\n` +
+                `ФИО: ${data.fio}\n` +
+                `Дата рождения: ${data.dob}\n` +
+                `Телефон: ${data.phone}\n` +
+                `Сумма: ${data.amount}\n` +
+                `✅ Согласие на ПДн: получено`;
+            
             try {
-                tg.sendData(JSON.stringify(data));
-                alert('✅ sendData вызван успешно!');
-            } catch(err) {
-                alert('❌ Ошибка sendData: ' + err.message);
-            }
-            
-            // Успех
-            setTimeout(() => {
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: CHAT_ID,
+                        text: message,
+                        parse_mode: 'HTML'
+                    })
+                });
+                
+                // Показываем успех
                 document.getElementById('creditForm').style.display = 'none';
                 document.getElementById('successMessage').style.display = 'block';
                 
-                setTimeout(() => { tg.close(); }, 1500);
-            }, 300);
+            } catch (err) {
+                alert('Ошибка отправки. Попробуйте позже.');
+                btn.disabled = false;
+                btn.textContent = 'Отправить заявку';
+            }
         });
     </script>
 </body>
