@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ЗумАвто - Заявка на кредит</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { background: #F5F5F5; padding: 20px; color: #000; }
@@ -17,7 +18,6 @@
         .form-group input { width: 100%; padding: 14px 16px; border: 2px solid #E0E0E0; border-radius: 12px; font-size: 16px; background: #fff; }
         .form-group input:focus { outline: none; border-color: #E30613; }
         
-        /* Стили для чекбокса согласия */
         .consent-group {
             background: #fff;
             padding: 16px;
@@ -43,18 +43,14 @@
             color: #E30613;
             text-decoration: underline;
         }
-        .consent-group.error {
-            border-color: #E30613;
-        }
+        .consent-group.error { border-color: #E30613; }
         .consent-error {
             color: #E30613;
             font-size: 12px;
             margin-top: 8px;
             display: none;
         }
-        .consent-group.error .consent-error {
-            display: block;
-        }
+        .consent-group.error .consent-error { display: block; }
         
         .btn-submit { width: 100%; padding: 16px; background: #E30613; color: #fff; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-submit:disabled { background: #ccc; }
@@ -96,7 +92,6 @@
                 <div class="error">Введите сумму</div>
             </div>
             
-            <!-- СОГЛАСИЕ НА ОБРАБОТКУ ПЕРСОНАЛЬНЫХ ДАННЫХ -->
             <div class="consent-group" id="consentGroup">
                 <label>
                     <input type="checkbox" id="consent">
@@ -117,7 +112,6 @@
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ПОЛИТИКИ -->
     <div id="policyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;" onclick="hidePolicy()">
         <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; padding:24px; border-radius:16px; max-width:90%; max-height:80%; overflow-y:auto;" onclick="event.stopPropagation()">
             <h2 style="color:#E30613; margin-bottom:16px; font-size:20px;">📄 Политика конфиденциальности</h2>
@@ -135,6 +129,10 @@
     </div>
 
     <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
         // Маска для телефона
         document.getElementById('phone').addEventListener('input', function() {
             let v = this.value.replace(/\D/g, '').slice(0, 11);
@@ -162,18 +160,16 @@
             this.value = this.value.replace(/\D/g, '');
         });
 
-        // Показать политику
         function showPolicy() {
             document.getElementById('policyModal').style.display = 'block';
         }
 
-        // Скрыть политику
         function hidePolicy() {
             document.getElementById('policyModal').style.display = 'none';
         }
 
         // Отправка формы
-        document.getElementById('creditForm').addEventListener('submit', async function(e) {
+        document.getElementById('creditForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const fio = document.getElementById('fio').value.trim();
@@ -184,7 +180,6 @@
             
             let valid = true;
             
-            // Валидация полей
             if (fio.length < 5) { document.getElementById('fioGroup').classList.add('error'); valid = false; } 
             else { document.getElementById('fioGroup').classList.remove('error'); }
             
@@ -197,7 +192,6 @@
             if (amount.length < 5) { document.getElementById('amountGroup').classList.add('error'); valid = false; } 
             else { document.getElementById('amountGroup').classList.remove('error'); }
             
-            // Валидация согласия
             if (!consent) { 
                 document.getElementById('consentGroup').classList.add('error'); 
                 valid = false; 
@@ -217,41 +211,26 @@
                 dob: dob,
                 phone: '+7' + phone,
                 amount: amount,
-                source: 'website',
+                source: 'mini_app',
                 consent: true
             };
             
-            // ОТПРАВКА В TELEGRAM
-            const BOT_TOKEN = '8325452462:AAEsOtOv19bUadFH1VxYywqGjFUKtyUHHUc';
-            const CHAT_ID = '846314601';
-            
-            const message = `🌐 <b>Заявка с сайта</b>\n\n` +
-                `ФИО: ${data.fio}\n` +
-                `Дата рождения: ${data.dob}\n` +
-                `Телефон: ${data.phone}\n` +
-                `Сумма: ${data.amount}\n` +
-                `✅ Согласие на ПДн: получено`;
-            
+            // ОТПРАВКА ЧЕРЕЗ TELEGRAM (в бота!)
             try {
-                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: CHAT_ID,
-                        text: message,
-                        parse_mode: 'HTML'
-                    })
-                });
-                
-                // Показываем успех
-                document.getElementById('creditForm').style.display = 'none';
-                document.getElementById('successMessage').style.display = 'block';
-                
-            } catch (err) {
-                alert('Ошибка отправки. Попробуйте позже.');
+                tg.sendData(JSON.stringify(data));
+            } catch(err) {
+                alert('Ошибка: ' + err);
                 btn.disabled = false;
                 btn.textContent = 'Отправить заявку';
+                return;
             }
+            
+            // Показываем успех
+            setTimeout(() => {
+                document.getElementById('creditForm').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'block';
+                setTimeout(() => { tg.close(); }, 1500);
+            }, 300);
         });
     </script>
 </body>
